@@ -117,3 +117,4 @@ gradio_cached_examples/
 # Others
 *.bak
 *.tmp
+.idea
