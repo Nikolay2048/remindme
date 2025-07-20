@@ -1,0 +1,119 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# Cython debug symbols
+cython_debug/
+
+# VS Code
+.vscode/
+
+# Mac OS
+.DS_Store
+
+# Jupyter runtime
+*.nbconvert.ipynb
+*.nb.html
+*.nb.json
+
+# Data files
+data/raw/
+data/processed/
+data/external/
+*.csv
+*.tsv
+*.json
+*.xlsx
+*.db
+*.sqlite
+*.log
+*.out
+
+# Model files
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+models/
+
+# Logs and checkpoints
+logs/
+checkpoints/
+*.ckpt
+
+# Secrets and config
+.env
+.env.*
+*.secret
+config/*.yaml
+config/*.json
+
+# Output folders
+outputs/
+results/
+runs/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Frontend (if using Node for UI)
+node_modules/
+npm-debug.log
+
+# Jupyter extensions (if using)
+.jupyter/lab/workspaces/
+
+# Streamlit
+.streamlit/
+
+# Gradio
+gradio_cached_examples/
+
+# Others
+*.bak
+*.tmp
