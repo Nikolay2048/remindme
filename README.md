@@ -1,3 +1,4 @@
+<pre lang="plaintext">
 word_memory_project/
 │
 ├── data/                    # Хранилище "сырых" и обработанных данных
@@ -34,3 +35,4 @@ word_memory_project/
 ├── requirements.txt         # Зависимости
 ├── README.md
 └── setup.py                 # Для установки как пакета (опционально)
+</pre>
