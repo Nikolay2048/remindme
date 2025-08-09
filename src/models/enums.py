@@ -1,0 +1,8 @@
+from enum import Enum
+
+
+class ReasonsForSkipProcessing(Enum):
+    NO_METADATA = "NO_METADATA"
+    NO_CAPTION_TEXT = "NO_CAPTION_TEXT"
+    UNKNOWN_EXCEPTION = "UNKNOWN_EXCEPTION"
+    PYK_NETWORK_ERROR = "PYK_NETWORK_ERROR"
