@@ -12,5 +12,5 @@ class Video:
     is_transcribed_locally: Optional[bool] = None
     language_code: Optional[str] = None
     metadata: Optional[dict] = None
-    subtitle_text: Optional[str] = None,
+    subtitle_text: Optional[str] = None
     reason_for_skip_processing: Optional[str] = None
