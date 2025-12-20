@@ -72,7 +72,7 @@ LOGGING_CONFIG = {
         #     "level": "INFO",
         #     "propagate": False
         # },
-        "src.dataproviders": {
+        "src.services": {
             "handlers": ["console", "file_providers"],
             "level": "DEBUG",
             "propagate": False

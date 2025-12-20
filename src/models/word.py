@@ -4,8 +4,6 @@ from datetime import datetime
 from src.models.enums import WordSource
 
 
-# TODO: оформление словаря в БД
-
 @dataclass
 class LearningWord:
     source: WordSource

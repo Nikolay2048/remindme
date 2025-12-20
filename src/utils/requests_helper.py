@@ -1,8 +1,9 @@
+import logging
 import time
+from typing import Optional
+
 import requests
 from requests.exceptions import ConnectionError, Timeout, RequestException
-from typing import Optional
-import logging
 
 logger = logging.getLogger(__name__)
 

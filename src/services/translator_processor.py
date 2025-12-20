@@ -10,6 +10,7 @@ from src.models.user_data import UserDataYandexTranslator
 
 logger = logging.getLogger(__name__)
 
+
 class YandexTranslatorProcessor:
     """
     Обрабатывает информацию с Яндекс переводчика

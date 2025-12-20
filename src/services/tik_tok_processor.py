@@ -1,26 +1,24 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
 from typing import Any
 
 import pyktok as pyk
 import requests
 from requests import RequestException
 
-from src.data.to_postgres import insert_videos_to_database
+from src.db.repository import VideoRepository
 from src.models.enums import ReasonsForSkipProcessing
-from src.models.user_data import UserDataTikTok
 from src.models.video import Video
+from src.services.user_data_processor import UserDataService
 from src.utils import extract_text_from_vtt
-from src.utils.tik_tok_helper import get_video_id_from_video_link
 
 logger = logging.getLogger(__name__)
 
 
 class TikTokProcessor:
 
-    def __init__(self, user_data: UserDataTikTok):
-        self.user_data = user_data
+    def __init__(self, video_links_list: list[str]):
+        self.video_links_list = video_links_list
 
     def get_caption_infos(self, video_metadata: dict) -> list | None:
         caption_infos = (
@@ -54,18 +52,18 @@ class TikTokProcessor:
             logger.warning(f"pyktok external error. Failed to get video metadata from {link}: {e}")
             return None
 
-    def process_video(self, video: dict, liked_links: set) -> Video | None:
-        video_id = get_video_id_from_video_link(video['Link'])
+    def process_video(self, video_link: str, existing_video) -> Video | None:
+        video_id = UserDataService.get_video_id_from_video_link(video_link)
+        if video_id in existing_video:
+            return
         try:
             res_video = Video(
                 video_id=video_id,
-                video_link=video['Link'],
-                viewed_at=datetime.strptime(video['Date'], "%Y-%m-%d %H:%M:%S"),
+                video_link=video_link,
                 is_transcribed_locally=False,
-                is_liked=video['Link'] in liked_links
             )
 
-            video_metadata = self.get_video_metadata_from_link(video['Link'])
+            video_metadata = self.get_video_metadata_from_link(video_link)
 
             if video_metadata is None:
                 res_video.reason_for_skip_processing = ReasonsForSkipProcessing.NO_METADATA.value
@@ -78,28 +76,28 @@ class TikTokProcessor:
             if caption_text is not None:
                 res_video.subtitle_text = caption_text
             else:
-                # TODO: Обработка через асинхронную очередь выделения текста посредством Whisper.
+                # TODO: Обработка через асинхронную очередь выделения текста (Rabbit\Kafka) посредством Whisper.
                 #  Здесь ожидается запись в очередь
                 res_video.subtitle_text = None
                 res_video.reason_for_skip_processing = ReasonsForSkipProcessing.NO_CAPTION_TEXT.value
 
             return res_video
         except Exception as e:
-            logger.error(f"Video skipped. Failed to process {video.get('Link', 'UNKNOWN')}: {e}", exc_info=True)
+            logger.error(f"Video skipped. Failed to process video by link {video_link}: {e}", exc_info=True)
             return None
 
-    def collect_video_from_user_metadata_parallel(self, batch_size, workers):
+    def collect_video_captions_from_user_videos(self, batch_size, workers):
         batch = []
-        logger.info(f"Processing for user email={self.user_data.user_email}, name={self.user_data.user_nickname}")
-        logger.info(f"User history contains {len(self.user_data.history_video_list)} videos")
+        existing_video = VideoRepository.get_existing_video_ids()
+        print(existing_video)
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
-                executor.submit(self.process_video, video, self.user_data.liked_links): video for video in
-                self.user_data.history_video_list
+                executor.submit(self.process_video, video, existing_video): video for video in
+                self.video_links_list
             }
             for idx, future in enumerate(as_completed(futures), start=1):
                 video = futures[future]
-                logger.debug(f"[{idx}/{len(self.user_data.history_video_list)}] Completed {video['Link']}")
+                logger.debug(f"[{idx}/{len(self.video_links_list)}] Completed {video}")
                 try:
                     result = future.result()
                     if result:
@@ -108,7 +106,7 @@ class TikTokProcessor:
                     logger.error(f"Error processing future result: {e}")
 
                 if len(batch) >= batch_size:
-                    insert_videos_to_database(batch)
+                    VideoRepository.insert_tik_tok_videos(batch)
                     batch.clear()
         if batch:
-            insert_videos_to_database(batch)
+            VideoRepository.insert_tik_tok_videos(batch)
