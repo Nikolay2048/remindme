@@ -5,12 +5,17 @@ from typing import Optional
 
 @dataclass
 class Video:
-    video_id: str
+    video_id: int
     video_link: str
-    viewed_at: Optional[datetime] = None
-    is_liked: Optional[bool] = None
     is_transcribed_locally: Optional[bool] = None
     language_code: Optional[str] = None
     metadata: Optional[dict] = None
-    subtitle_text: Optional[str] = None,
+    subtitle_text: Optional[str] = None
     reason_for_skip_processing: Optional[str] = None
+
+
+@dataclass
+class UserVideo:
+    video_id: int
+    viewed_at: datetime
+    is_liked: Optional[bool] = None

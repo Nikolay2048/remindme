@@ -56,9 +56,7 @@ cython_debug/
 *.nb.json
 
 # Data files
-data/raw/
-data/processed/
-data/external/
+data
 *.csv
 *.tsv
 *.json
@@ -118,3 +116,5 @@ gradio_cached_examples/
 *.bak
 *.tmp
 .idea
+/infra/
+/_lessons

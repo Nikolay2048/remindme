@@ -1,6 +1,8 @@
 import json
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 
 
 class UserDataTikTok:
@@ -33,11 +35,10 @@ class UserDataTikTok:
 
 
 @dataclass
-class UserDataYandexTranslator:
-    collections: list[str]
-
-
-@dataclass
 class UserData:
-    tiktok_data: UserDataTikTok
-    yandex_translator: UserDataYandexTranslator
+    id: int
+    user_name: str
+    tg_username: str
+    email: str
+    created_at: datetime = datetime.now()
+    last_visit_at: datetime = datetime.now()

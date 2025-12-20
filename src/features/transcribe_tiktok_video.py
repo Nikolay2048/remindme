@@ -6,7 +6,7 @@ from pathlib import Path
 import pyktok as pyk
 import whisper
 
-from src.data.to_postgres import get_skipped_videos_by_reason, update_videos_in_database
+from src.db.repositories import VideoRepository
 from src.models.enums import ReasonsForSkipProcessing
 from src.models.video import Video
 from src.utils.commons import wait_for_file
@@ -26,11 +26,17 @@ for path in [VIDEO_DIR, AUDIO_DIR]:
 
 
 def process_video_without_captions():
+    """
+    Обрабатывает видео без субтитров из БД, добавляет субтитры.
+    Returns: Обновленное состояние в БД с добовленными субтитрами
+
+    """
     offset = 0
     total_processed = 0
     while True:
         videos = []
-        batch = get_skipped_videos_by_reason(ReasonsForSkipProcessing.NO_CAPTION_TEXT.value, BATCH_SIZE, offset)
+        batch = VideoRepository.get_skipped_videos_by_reason(ReasonsForSkipProcessing.NO_CAPTION_TEXT.value, BATCH_SIZE,
+                                                             offset)
         if not batch:
             break
         for skipped_video in batch:
@@ -40,7 +46,7 @@ def process_video_without_captions():
                 is_transcribed_locally=True
             ))
         recognize_speach_tiktok_videos(videos)
-        update_videos_in_database(videos)
+        VideoRepository.update_videos_in_database(videos)
         total_processed += len(batch)
         offset += BATCH_SIZE
         logger.info(f"Processing: {total_processed} records from skipped links")

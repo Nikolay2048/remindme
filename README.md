@@ -36,3 +36,11 @@ word_memory_project/
 ├── README.md
 └── setup.py                 # Для установки как пакета (опционально)
 </pre>
+
+
+Поддерживаемые языки english
+
+python -m spacy download en_core_web_sm
+conda env export > environment.yml
+
+https://github.com/murtaza-nasir/whisperx-asr-service/blob/main/Dockerfile

@@ -1,0 +1,13 @@
+aiogram==3.24.0
+faster_whisper==1.2.1
+ctranslate2==4.6.2
+ollama==0.6.1
+openai_whisper==20250625
+psycopg2_binary==2.9.11
+pyktok==0.0.31
+pymorphy3==2.0.6
+python-dotenv==1.2.1
+Requests==2.32.5
+soundfile==0.13.1
+spacy==3.8.11
+scikit-learn==1.5.2

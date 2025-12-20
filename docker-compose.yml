@@ -12,23 +12,122 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./src/sql/db_init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  #  asr:
+  #    env_file:
+  #      - .env
+  #    build:
+  #      context: .
+  #      dockerfile: docker/asr/Dockerfile
+  #    container_name: asr
+  #    restart: unless-stopped
+  #
+  #    deploy:
+  #      resources:
+  #        reservations:
+  #          devices:
+  #            - driver: nvidia
+  #              count: all
+  #              capabilities: [ gpu ]
+  #
+  #    ports:
+  #      - "9000:9000"
+  #
+  #    environment:
+  #      # All values loaded from .env file
+  #      - DEVICE=${DEVICE:-cuda}
+  #      - COMPUTE_TYPE=${COMPUTE_TYPE:-float16}
+  #      - BATCH_SIZE=${BATCH_SIZE:-16}
+  #      - HF_TOKEN=${HF_TOKEN}
+  #      - CACHE_DIR=${CACHE_DIR:-/.cache}
+  #      - HF_HOME=${CACHE_DIR:-/.cache}
+  #      - HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-}
+  #      - NLTK_DATA=/.cache/nltk_data
+  #      - PRELOAD_MODEL=${PRELOAD_MODEL:-}
+  #      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-1000}
+  #
+  #    volumes:
+  #      # Persistent cache for models (recommended)
+  #      - whisperx-cache:/.cache
+  #
+  #    healthcheck:
+  #      test: [ "CMD", "python3", "-c", "import requests; requests.get('http://localhost:9000/health')" ]
+  #      interval: 30s
+  #      timeout: 10s
+  #      retries: 3
+  #      start_period: 60s
+  #
+  #    # Logging configuration
+  #    logging:
+  #      driver: "json-file"
+  #      options:
+  #        max-size: "10m"
+  #        max-file: "3"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    runtime: nvidia
+
+
+  # One-time init: pulls the model on first start (uses the same ollama_data volume)
+  ollama_init:
+    image: ollama/ollama:latest
+    container_name: ollama_init
+    depends_on:
+      - ollama
+    entrypoint: [ "/bin/sh", "-lc" ]
+    command: >
+      "sleep 3 &&
+       ollama pull ${LLM_MODEL:-qwen2.5:14b-instruct}"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: "no"
+
+
   app:
-    build: .
+    build:
+      context: .
+      args:
+        TORCH_REQUIREMENTS: requirements.gpu.txt
     container_name: remindme_app
+
     depends_on:
       - db
+      - ollama
     env_file: .env
+
     environment:
-      DB_HOST: ${DB_HOST}
+      DB_HOST: db
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
-      DB_TABLE: ${DB_TABLE}
+
+      ASR_URL: ${ASR_URL:-http://asr:9000}
+
+      # Ollama
+      # OLLAMA_HOST: http://ollama:11434
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:14b-instruct}
+
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
     working_dir: /app
 
+    runtime: nvidia
+
+
 volumes:
   postgres_data:
+#  whisperx-cache:
+#    driver: local
+  ollama_data:
+    driver: local
