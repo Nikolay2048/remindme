@@ -16,7 +16,6 @@ class Video:
 
 @dataclass
 class UserVideo:
-    user_id: int
     video_id: int
     viewed_at: datetime
     is_liked: Optional[bool] = None

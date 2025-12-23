@@ -89,7 +89,7 @@ class TikTokProcessor:
     def collect_video_captions_from_user_videos(self, batch_size, workers):
         batch = []
         existing_video = VideoRepository.get_existing_video_ids()
-        print(existing_video)
+
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
                 executor.submit(self.process_video, video, existing_video): video for video in

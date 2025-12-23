@@ -9,6 +9,7 @@ from psycopg2.extras import RealDictCursor, execute_batch
 
 from src.models.user_data import UserData
 from src.models.video import Video, UserVideo
+from src.models.word import UserWord
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -24,6 +25,7 @@ DB_CONFIG = {
 USER_TABLE = os.getenv("DB_USERS_TABLE")
 USER_VIDEO_TABLE = os.getenv("DB_USER_VIDEO_TABLE")
 VIDEOS_TABLE = os.getenv("DB_TIK_TOK_VIDEOS_TABLE")
+VOCABULARY_TABLE = os.getenv("VOCABULARY_TABLE")
 
 
 def _require_table(name: Optional[str], env_name: str) -> str:
@@ -108,7 +110,7 @@ class VideoRepository:
             raise
 
     @staticmethod
-    def insert_user_videos(videos: Sequence[UserVideo]) -> None:
+    def insert_user_videos(user_id:int, videos: Sequence[UserVideo]) -> None:
         if not videos:
             logger.debug("No videos to insert. Skipping.")
             return
@@ -123,7 +125,7 @@ class VideoRepository:
 
         rows = [
             (
-                v.user_id,
+                user_id,
                 v.video_id,
                 v.viewed_at,
                 v.is_liked
@@ -238,5 +240,36 @@ class VideoRepository:
             raise
 
 
-class WordsRepository:
-    pass
+class UserVocabularyRepository:
+    @staticmethod
+    def insert_or_update_word(user_id:int,  words: list[UserWord]) -> None:
+        if not words:
+            logger.debug("No words to insert. Skipping.")
+            return
+
+        table_name = _require_table(VOCABULARY_TABLE, "VOCABULARY_TABLE")
+        query = f"""INSERT INTO {table_name} (user_id, lexeme_id, collection_name, lemma, text, translation_text, translation_lemma, created_at, updated_at) 
+        VALUES (%(user_id)s, %(lexeme_id)s, %(collection_name)s, %(lemma)s, %(text)s, %(translation_text)s, %(translation_lemma)s, %(created_at)s, now()) 
+        ON CONFLICT (user_id, text) DO UPDATE SET collection_name = EXCLUDED.collection_name, lemma = EXCLUDED.lemma, translation_text = EXCLUDED.translation_text, translation_lemma = EXCLUDED.translation_lemma, updated_at = now(); """
+
+        params = []
+        for w in words:
+            params.append({
+                "user_id": user_id,
+                "lexeme_id": None,
+                "collection_name": w.collection_name,
+                "lemma": w.lemma,
+                "text": w.text,
+                "translation_text": w.translation_text,
+                "translation_lemma": w.translation_lemma,
+                "created_at": w.creation_datetime,
+            })
+
+        try:
+            with get_conn() as conn:
+                with conn.cursor() as cur:
+                    execute_batch(cur, query, params, page_size=500)
+                conn.commit()
+        except psycopg2.Error as e:
+            logger.exception("Error inserting/updating words into postgres: %s", e)
+            raise

@@ -36,3 +36,6 @@ word_memory_project/
 ├── README.md
 └── setup.py                 # Для установки как пакета (опционально)
 </pre>
+
+
+Поддерживаемые языки english

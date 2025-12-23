@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from src.features import process_video_without_captions
 from src.models.user_data import UserData, UserDataYandexTranslator, UserDataTikTok
 from src.services.tik_tok_processor import TikTokProcessor
+from src.services.translator_processor import YandexTranslatorProcessor
 # from src.services.tik_tok_processor import TikTokProcessor
 from src.services.user_data_processor import UserDataService
 
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     user_data = UserData(
         id=USER_ID,
         user_name=USER_NAME,
-        email="",
+        email="@emal",
         created_at=datetime.datetime.now(),
         last_visit_at=datetime.datetime.now(),
         tiktok_data=UserDataTikTok(USER_DATA_TIK_TOK_PATH_ARCH),
@@ -47,8 +48,8 @@ if __name__ == '__main__':
     tik_tok_processor = TikTokProcessor(video_links_list=user_data_service.get_user_video_links())
     tik_tok_processor.collect_video_captions_from_user_videos(VIDEO_BATCH_SIZE, VIDEO_WORKER_COUNT)
     logger.info(f"Collected all captions for user")
-    user_data_service.process_user_data()
-    process_video_without_captions()
+    # process_video_without_captions()
 
-    # yandex_translator_processor = YandexTranslatorProcessor(user_data=user_data.yandex_translator)
-    # yandex_translator_processor.collect_words_from_collections()
+    logger.info(f"Processing user data")
+    user_data_service.process_user_data()
+

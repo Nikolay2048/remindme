@@ -5,14 +5,11 @@ from src.models.enums import WordSource
 
 
 @dataclass
-class LearningWord:
+class UserWord:
     source: WordSource
-    collections: list[str]
+    collection_name: str
     lemma: str
     text: str
-    translation: str
+    translation_text: str
+    translation_lemma: str
     creation_datetime: datetime
-
-
-class Lexeme:
-    language: str

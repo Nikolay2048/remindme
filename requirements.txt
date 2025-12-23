@@ -1,6 +1,8 @@
 openai_whisper==20250625
 psycopg2_binary==2.9.10
 pyktok==0.0.31
-python-dotenv==1.1.1
-Requests==2.32.4
+pymorphy3==1.2.0
 tqdm==4.67.1
+python-dotenv==1.2.1
+Requests==2.32.5
+spacy==3.8.2

@@ -3,10 +3,14 @@ import json
 import logging
 import random
 import string
+from datetime import datetime, timezone
 
 import requests
 
+from src.models.enums import WordSource
 from src.models.user_data import UserDataYandexTranslator
+from src.models.word import UserWord
+from src.services.word_processor import WordProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +21,8 @@ class YandexTranslatorProcessor:
 
     """
 
-    def __init__(self, user_data: UserDataYandexTranslator) -> None:
-        self._words_collections = user_data.collections
-
-    def fetch_collection(self, collection_id: str) -> dict:
+    @staticmethod
+    def fetch_collection(collection_id: str) -> dict:
         yandexuid = "".join(random.choices(string.digits, k=18))
 
         url = f"https://translate.yandex.ru/props/api/collections/{collection_id}?srv=tr-text&uid"
@@ -38,30 +40,36 @@ class YandexTranslatorProcessor:
         r.raise_for_status()
         return r.json()
 
-    def extract_pairs(self, payload: dict):
+    @staticmethod
+    def extract_words(payload: dict):
         # Обычно структура такая: payload["collection"]["records"][...]
         records = payload.get("collection", {}).get("records", [])
-        pairs = []
+        words = []
+
+        collection_name = payload.get("collection", {}).get("name", "")
         for rec in records:
-            src = rec.get("text", "")
-            dst = rec.get("translation", "")
+            if rec.get("lang") == "ru-en":
+                dst = rec.get("text", "")
+                src = rec.get("translation", "")
+            elif rec.get("lang") == "en-ru":
+                src = rec.get("text", "")
+                dst = rec.get("translation", "")
+            else:
+                logger.error(f"Unsupported YandexTranslator language: {rec.get('lang')}")
+                dst = src = ""
+            wp = WordProcessor()
             if src or dst:
-                pairs.append((src, dst))
-        return pairs
+                word = UserWord(
+                    source=WordSource.YANDEX_TRANSLATOR,
+                    collection_name=collection_name,
+                    lemma=" ".join(wp.get_lexemes(src)),
+                    translation_lemma=" ".join(wp.get_lexemes(dst)),
+                    text=src,
+                    translation_text=dst,
+                    creation_datetime=datetime.fromtimestamp(rec.get("creationTimestamp", ""), tz=timezone.utc),
+                )
+                words.append(word)
+        return words
 
-    def collect_words_from_collections(self):
-        for collection_id in self._words_collections:
-            logger.info(f"Collecting words from collection={collection_id}")
-            payload = self.fetch_collection(collection_id)
-            logger.debug(payload)
-            pairs = self.extract_pairs(payload)
-            logger.info(f"Collected words pairs: {len(pairs)}")
 
-            with open("yandex_collection.csv", "w", newline="", encoding="utf-8") as f:
-                w = csv.writer(f)
-                w.writerow(["text", "translation"])
-                w.writerows(pairs)
 
-            # если нужно — можно сохранить сырой JSON
-            with open("yandex_collection_raw.json", "w", encoding="utf-8") as f:
-                json.dump(payload, f, ensure_ascii=False, indent=2)

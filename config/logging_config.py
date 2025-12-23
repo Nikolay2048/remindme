@@ -33,7 +33,7 @@ LOGGING_CONFIG = {
             "class": "logging.FileHandler",
             "filename": os.path.join(LOG_DIR, "network.log"),
             "formatter": "default",
-            "level": "DEBUG"
+            "level": "ERROR"
         },
         "file_providers": {
             "class": "logging.FileHandler",
@@ -64,7 +64,7 @@ LOGGING_CONFIG = {
         },
         "urllib3": {
             "handlers": ["console", "file_network"],
-            "level": "DEBUG",
+            "level": "ERROR",
             "propagate": False
         },
         # "services.api": {
