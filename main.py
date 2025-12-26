@@ -3,7 +3,7 @@ import json
 
 from dotenv import load_dotenv
 
-from src.features import process_video_without_captions
+from src.features.transcribe_tiktok_video import process_video_without_captions
 from src.models.user_data import UserData, UserDataYandexTranslator, UserDataTikTok
 from src.services.tik_tok_processor import TikTokProcessor
 from src.services.translator_processor import YandexTranslatorProcessor
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     user_data_service = UserDataService(user_data=user_data)
     tik_tok_processor = TikTokProcessor(video_links_list=user_data_service.get_user_video_links())
     tik_tok_processor.collect_video_captions_from_user_videos(VIDEO_BATCH_SIZE, VIDEO_WORKER_COUNT)
-    logger.info(f"Collected all captions for user")
+    logger.info(f"Collected all captions from tik-tok for user")
     # process_video_without_captions()
 
     logger.info(f"Processing user data")

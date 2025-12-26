@@ -110,7 +110,7 @@ class VideoRepository:
             raise
 
     @staticmethod
-    def insert_user_videos(user_id:int, videos: Sequence[UserVideo]) -> None:
+    def insert_user_videos(user_id: int, videos: Sequence[UserVideo]) -> None:
         if not videos:
             logger.debug("No videos to insert. Skipping.")
             return
@@ -242,7 +242,7 @@ class VideoRepository:
 
 class UserVocabularyRepository:
     @staticmethod
-    def insert_or_update_word(user_id:int,  words: list[UserWord]) -> None:
+    def insert_or_update_word(user_id: int, words: list[UserWord]) -> None:
         if not words:
             logger.debug("No words to insert. Skipping.")
             return
@@ -273,3 +273,53 @@ class UserVocabularyRepository:
         except psycopg2.Error as e:
             logger.exception("Error inserting/updating words into postgres: %s", e)
             raise
+
+    class LessonRepository:
+        @staticmethod
+        def create_lesson(user_id: int, title: str | None = None,
+                          source: str | None = None, source_uri: str | None = None,
+                          language_mode: str = "ru+en", duration_sec: int | None = None,
+                          started_at=None, metadata: dict | None = None) -> int:
+            sql = """
+                  INSERT INTO lesson (user_id, title, source, source_uri, language_mode, duration_sec, started_at, \
+                                      metadata)
+                  VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb) RETURNING id; \
+                  """
+            with get_conn() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql, (user_id, title, source, source_uri, language_mode, duration_sec, started_at,
+                                      psycopg2.extras.Json(metadata) if metadata else None))
+                    lesson_id = cur.fetchone()[0]
+            conn.commit()
+            return lesson_id
+
+        @staticmethod
+        def insert_lesson_segments(conn, lesson_id: int, segments: list[dict], page_size: int = 500) -> None:
+            if not segments:
+                return
+
+            sql = """
+                  INSERT INTO lesson_segment (lesson_id, start_s, end_s, speaker, text, asr_confidence)
+                  VALUES (%(lesson_id)s, %(start_s)s, %(end_s)s, %(speaker)s, %(text)s, %(asr_confidence)s); \
+                  """
+
+            params = []
+            for s in segments:
+                text = (s.get("text") or "").strip()
+                if not text:
+                    continue
+                params.append({
+                    "lesson_id": lesson_id,
+                    "start_s": float(s["start_s"]),
+                    "end_s": float(s["end_s"]),
+                    "speaker": s.get("speaker"),
+                    "text": text,
+                    "asr_confidence": s.get("asr_confidence"),
+                })
+
+            if not params:
+                return
+            with get_conn() as conn:
+                with conn.cursor() as cur:
+                    execute_batch(cur, sql, params, page_size=page_size)
+            conn.commit()

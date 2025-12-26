@@ -86,3 +86,50 @@ CREATE TABLE IF NOT EXISTS user_vocabulary
 
     PRIMARY KEY (user_id, text)
 );
+
+CREATE TABLE IF NOT EXISTS lesson
+(
+    id            BIGSERIAL PRIMARY KEY,
+    user_id       BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+
+    title         TEXT        NULL,
+    source        TEXT        NULL, -- 'zoom' / 'meet' / 'file'
+    source_uri    TEXT        NULL, -- путь/ссылка на файл
+    language_mode TEXT        NOT NULL DEFAULT 'ru+en',
+
+    duration_sec  INT         NULL,
+    started_at    TIMESTAMPTZ NULL,
+
+    metadata      JSONB       NULL,
+
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS lesson_speaker
+(
+    id                BIGSERIAL PRIMARY KEY,
+    lesson_id         BIGINT      NOT NULL REFERENCES lesson (id) ON DELETE CASCADE,
+
+    diarization_label TEXT        NOT NULL, -- 'SPEAKER_00'
+    role              TEXT        NULL,     -- 'teacher'/'student'/NULL
+    display_name      TEXT        NULL,
+
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (lesson_id, diarization_label)
+);
+
+CREATE TABLE IF NOT EXISTS lesson_turn
+(
+    id         BIGSERIAL PRIMARY KEY,
+    lesson_id  BIGINT      NOT NULL REFERENCES lesson (id) ON DELETE CASCADE,
+    speaker_id BIGINT      NULL REFERENCES lesson_speaker (id) ON DELETE SET NULL,
+
+    start_s    REAL        NOT NULL,
+    end_s      REAL        NOT NULL,
+
+    text       TEXT        NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+    CONSTRAINT ck_turn_time CHECK (start_s >= 0 AND end_s >= start_s)
+);

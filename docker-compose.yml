@@ -17,6 +17,7 @@ services:
     container_name: remindme_app
     depends_on:
       - db
+      - asr
     env_file: .env
     environment:
       DB_HOST: ${DB_HOST}
@@ -25,10 +26,28 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_TABLE: ${DB_TABLE}
+      ASR_URL: http://asr:8000
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
     working_dir: /app
 
+  asr:
+    env_file:
+      - .env
+    build:
+      context: .
+      dockerfile: docker/asr/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [ gpu ]
+
 volumes:
   postgres_data:
+  hf_cache:
