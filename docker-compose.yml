@@ -38,16 +38,51 @@ services:
     build:
       context: .
       dockerfile: docker/asr/Dockerfile
-    ports:
-      - "8000:8000"
-    environment:
-      HF_TOKEN: ${HF_TOKEN}
+    restart: unless-stopped
+
     deploy:
       resources:
         reservations:
           devices:
-            - capabilities: [ gpu ]
+              - driver: nvidia
+                count: all
+                capabilities: [ gpu ]
+
+    ports:
+      - "9000:9000"
+
+    environment:
+      # All values loaded from .env file
+      - DEVICE=${DEVICE:-cuda}
+      - COMPUTE_TYPE=${COMPUTE_TYPE:-float16}
+      - BATCH_SIZE=${BATCH_SIZE:-16}
+      - HF_TOKEN=${HF_TOKEN}
+      - CACHE_DIR=${CACHE_DIR:-/.cache}
+      - HF_HOME=${CACHE_DIR:-/.cache}
+      - HF_HUB_OFFLINE=${HF_HUB_OFFLINE:-}
+      - NLTK_DATA=/.cache/nltk_data
+      - PRELOAD_MODEL=${PRELOAD_MODEL:-}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-1000}
+
+    volumes:
+      # Persistent cache for models (recommended)
+      - whisperx-cache:/.cache
+
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import requests; requests.get('http://localhost:9000/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
-  hf_cache:
+  whisperx-cache:
+    driver: local

@@ -42,3 +42,5 @@ word_memory_project/
 
 python -m spacy download en_core_web_sm
 conda env export > environment.yml
+
+https://github.com/murtaza-nasir/whisperx-asr-service/blob/main/Dockerfile
