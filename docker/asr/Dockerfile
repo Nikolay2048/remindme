@@ -57,7 +57,7 @@ ENV NLTK_DATA=/.cache/nltk_data
 RUN mkdir -p /.cache && chmod 777 /.cache
 
 # Copy application code
-COPY app /workspace/app
+COPY docker/asr/app /workspace/app
 
 # Expose API port
 EXPOSE 9000

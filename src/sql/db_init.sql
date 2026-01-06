@@ -58,6 +58,12 @@ CREATE TABLE IF NOT EXISTS user_vocabulary
     user_id           BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     lexeme_id         BIGINT      NULL REFERENCES lexeme (id) ON DELETE CASCADE,
 
+    source            TEXT[]      NOT NULL DEFAULT '{}',
+    contexts          TEXT[]      NULL,
+    passive_knowledge BOOLEAN              DEFAULT FALSE,
+    active_knowledge  BOOLEAN              DEFAULT FALSE,
+
+
     collection_name   TEXT        NULL,
     lemma             TEXT        NULL,
     text              TEXT        NULL,

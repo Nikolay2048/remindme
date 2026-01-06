@@ -248,9 +248,48 @@ class UserVocabularyRepository:
             return
 
         table_name = _require_table(VOCABULARY_TABLE, "VOCABULARY_TABLE")
-        query = f"""INSERT INTO {table_name} (user_id, lexeme_id, collection_name, lemma, text, translation_text, translation_lemma, created_at, updated_at) 
-        VALUES (%(user_id)s, %(lexeme_id)s, %(collection_name)s, %(lemma)s, %(text)s, %(translation_text)s, %(translation_lemma)s, %(created_at)s, now()) 
-        ON CONFLICT (user_id, text) DO UPDATE SET collection_name = EXCLUDED.collection_name, lemma = EXCLUDED.lemma, translation_text = EXCLUDED.translation_text, translation_lemma = EXCLUDED.translation_lemma, updated_at = now(); """
+        query = f"""INSERT INTO {table_name} (
+            user_id,
+            lexeme_id,
+            collection_name,
+            lemma,
+            text,
+            translation_text,
+            translation_lemma,
+            source,
+            seen_count,
+            created_at,
+            updated_at
+        )
+        VALUES (
+            %(user_id)s,
+            %(lexeme_id)s,
+            %(collection_name)s,
+            %(lemma)s,
+            %(text)s,
+            %(translation_text)s,
+            %(translation_lemma)s,
+            ARRAY[%(source)s],
+            1,
+            %(created_at)s,
+            now()
+        )
+        ON CONFLICT (user_id, text)
+        DO UPDATE SET
+            lemma = EXCLUDED.lemma,
+            translation_text = EXCLUDED.translation_text,
+            translation_lemma = EXCLUDED.translation_lemma,
+        
+            source = (
+                SELECT ARRAY(
+                    SELECT DISTINCT s
+                    FROM unnest(user_vocabulary.source || EXCLUDED.source) s
+                )
+            ),
+        
+            seen_count = user_vocabulary.seen_count + 1,
+            updated_at = now();
+"""
 
         params = []
         for w in words:
@@ -262,6 +301,7 @@ class UserVocabularyRepository:
                 "text": w.text,
                 "translation_text": w.translation_text,
                 "translation_lemma": w.translation_lemma,
+                "source": w.source.value,
                 "created_at": w.creation_datetime,
             })
 

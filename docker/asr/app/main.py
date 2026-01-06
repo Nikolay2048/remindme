@@ -142,7 +142,7 @@ async def root():
 async def transcribe_audio(
     audio_file: UploadFile = File(...),
     task: str = Form("transcribe"),
-    language: Optional[str] = Form(None),
+    # language: Optional[str] = Form(None),
     initial_prompt: Optional[str] = Form(None),
     word_timestamps: bool = Form(True),
     output_format: str = Form("json"),
@@ -207,7 +207,7 @@ async def transcribe_audio(
         if file_size_mb > 100:
             logger.warning(f"Processing large file ({file_size_mb:.1f}MB) - may consume significant VRAM")
 
-        logger.info(f"Processing audio file: {audio_file.filename} ({file_size_mb:.1f}MB), model: {model}, language: {language}")
+        # logger.info(f"Processing audio file: {audio_file.filename} ({file_size_mb:.1f}MB), model: {model}, language: {language}")
 
         # Load model
         whisper_model = load_whisper_model(model)
@@ -218,7 +218,7 @@ async def transcribe_audio(
 
         transcribe_options = {
             "batch_size": BATCH_SIZE,
-            "language": language,
+            # "language": language,
             "task": task
         }
 
@@ -227,8 +227,8 @@ async def transcribe_audio(
 
         result = whisper_model.transcribe(audio, **transcribe_options)
 
-        detected_language = result.get("language", language or "en")
-        logger.info(f"Transcription complete. Detected language: {detected_language}")
+        # detected_language = result.get("language", language or "en")
+        # logger.info(f"Transcription complete. Detected language: {detected_language}")
 
         # Clear GPU memory after transcription
         clear_gpu_memory()
@@ -238,7 +238,7 @@ async def transcribe_audio(
             logger.info("Aligning timestamps...")
             try:
                 model_a, metadata = whisperx.load_align_model(
-                    language_code=detected_language,
+                    # language_code=detected_language,
                     device=DEVICE,
                     model_dir=CACHE_DIR
                 )
@@ -321,7 +321,7 @@ async def transcribe_audio(
         if output_format == "json":
             response_data = {
                 "text": result.get("segments", []),
-                "language": detected_language,
+                # "language": detected_language,
                 "segments": result.get("segments", []),
                 "word_segments": result.get("word_segments", [])
             }

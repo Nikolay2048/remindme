@@ -10,3 +10,4 @@ class ReasonsForSkipProcessing(Enum):
 
 class WordSource(Enum):
     YANDEX_TRANSLATOR = "YANDEX_TRANSLATOR"
+    LESSON = "LESSON"
