@@ -1,11 +1,13 @@
 import logging
 from typing import Any, Dict, List, Sequence
 
+import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor, execute_batch, Json
 
 from src.db.postgres import get_conn
 from src.models.user_data import UserData
+from src.models.video import Video
 from src.models.word import UserWord
 from src.services.word_processor import WordProcessor
 from src.utils.text_norm import normalize_vocab_key
@@ -61,34 +63,35 @@ class VideoRepository:
                 execute_batch(cur, sql, params, page_size=200)
 
     @staticmethod
-    def insert_tik_tok_videos(rows: Sequence[Dict[str, Any]]) -> None:
+    def insert_tik_tok_videos(videos: Sequence[Video]) -> None:
         """
         rows: [{"video_id":..., "video_link":..., "subtitle_text":..., ...}]
         """
-        if not rows:
+        if not videos:
             return
 
         sql = """
               INSERT INTO tik_tok_video
               (video_id, video_link, subtitle_text, is_transcribed_locally, language_code, metadata,
                reason_for_skip_processing)
-              VALUES (%s, %s, %s, %s, %s, %s::jsonb, %s) ON CONFLICT (video_id) DO NOTHING; \
+              VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (video_id) DO NOTHING; 
               """
-        params = []
-        for r in rows:
-            params.append((
-                r["video_id"],
-                r["video_link"],
-                r.get("subtitle_text"),
-                bool(r.get("is_transcribed_locally", False)),
-                r.get("language_code"),
-                Json(r.get("metadata")) if r.get("metadata") else None,
-                r.get("reason_for_skip_processing"),
-            ))
+        rows = [
+            (
+                v.video_id,
+                v.video_link,
+                v.subtitle_text,
+                v.is_transcribed_locally,
+                v.language_code,
+                psycopg2.extras.Json(v.metadata) if getattr(v, "metadata", None) else None,
+                v.reason_for_skip_processing,
+            )
+            for v in videos
+        ]
 
         with get_conn() as conn:
             with conn.cursor() as cur:
-                execute_batch(cur, sql, params, page_size=200)
+                execute_batch(cur, sql, rows, page_size=200)
 
     @staticmethod
     def get_skipped_videos_by_reason(reason: str, batch_size: int = 500, offset: int = 0) -> List[Dict[str, Any]]:

@@ -4,12 +4,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from src.features.transcribe_tiktok_video import process_video_without_captions
 from src.models.user_data import UserData, UserDataYandexTranslator, UserDataTikTok
 from src.services.lesson_analyzer.processor import LessonProcessor
 from src.services.tik_tok_processor import TikTokProcessor
-from src.services.translator_processor import YandexTranslatorProcessor
-# from src.services.tik_tok_processor import TikTokProcessor
 from src.services.user_data_processor import UserDataService
 
 load_dotenv()
@@ -63,7 +60,7 @@ if __name__ == '__main__':
     res = analyzer.process_video_to_db(
         user_id=123,
         video_path=str(video_path),
-        out_dir=str(BASE_DIR /"data" / "lessons"/ "Processed"),
+        out_dir=str(BASE_DIR / "data" / "processed" / "lessons"),
         title="Lesson 2",
         source="file",
         materials_text=None,
