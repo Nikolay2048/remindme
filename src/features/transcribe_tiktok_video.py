@@ -6,7 +6,7 @@ from pathlib import Path
 import pyktok as pyk
 import whisper
 
-from src.db.repository import VideoRepository
+from src.db.repositories import VideoRepository
 from src.models.enums import ReasonsForSkipProcessing
 from src.models.video import Video
 from src.utils.commons import wait_for_file

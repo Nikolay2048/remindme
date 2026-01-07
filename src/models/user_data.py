@@ -71,6 +71,7 @@ class UserDataYandexTranslator:
 class UserData:
     id: int
     user_name: str
+    tg_username:str
     email: str
     created_at: datetime
     last_visit_at: Optional[datetime]

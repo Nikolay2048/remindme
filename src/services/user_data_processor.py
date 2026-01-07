@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from src.db.repository import VideoRepository, UserRepository, UserVocabularyRepository
+from src.db.repositories import VideoRepository, UserRepository, UserVocabularyRepository
 from src.models.user_data import UserData
 from src.models.video import UserVideo
 from src.services.translator_processor import YandexTranslatorProcessor

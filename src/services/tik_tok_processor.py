@@ -6,7 +6,7 @@ import pyktok as pyk
 import requests
 from requests import RequestException
 
-from src.db.repository import VideoRepository
+from src.db.repositories import VideoRepository
 from src.models.enums import ReasonsForSkipProcessing
 from src.models.video import Video
 from src.services.user_data_processor import UserDataService
