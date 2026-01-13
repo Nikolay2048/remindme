@@ -7,7 +7,7 @@ from psycopg2.extras import RealDictCursor, execute_batch, Json
 
 from src.db.postgres import get_conn
 from src.models.user_data import UserData
-from src.models.video import Video
+from src.models.video import Video, UserVideo
 from src.models.word import UserWord
 from src.services.word_processor import WordProcessor
 from src.utils.text_norm import normalize_vocab_key
@@ -46,21 +46,35 @@ class VideoRepository:
                 return [r[0] for r in cur.fetchall()]
 
     @staticmethod
-    def insert_user_videos(user_id: int, rows: Sequence[Dict[str, Any]]) -> None:
-        """
-        rows: [{"video_id":..., "viewed_at":..., "is_liked":...}]
-        """
-        if not rows:
+    def insert_user_videos(user_id: int, videos: Sequence[UserVideo]) -> None:
+        if not videos:
+            logger.debug("No videos to insert. Skipping.")
             return
 
-        sql = """
-              INSERT INTO user_video (user_id, video_id, viewed_at, is_liked)
-              VALUES (%s, %s, %s, %s) ON CONFLICT (user_id, video_id, viewed_at) DO NOTHING; \
-              """
-        params = [(user_id, r["video_id"], r["viewed_at"], bool(r.get("is_liked", False))) for r in rows]
-        with get_conn() as conn:
-            with conn.cursor() as cur:
-                execute_batch(cur, sql, params, page_size=200)
+        query = f"""
+                    INSERT INTO user_video
+                    (user_id, video_id, viewed_at, is_liked)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT (user_id, video_id, viewed_at) DO NOTHING;
+                """
+
+        rows = [
+            (
+                user_id,
+                v.video_id,
+                v.viewed_at,
+                v.is_liked
+            )
+            for v in videos
+        ]
+
+        try:
+            with get_conn() as conn:
+                with conn.cursor() as cur:
+                    execute_batch(cur, query, rows, page_size=100)
+        except psycopg2.Error as e:
+            logger.exception("Error inserting user videos into postgres: %s", e)
+            raise
 
     @staticmethod
     def insert_tik_tok_videos(videos: Sequence[Video]) -> None:
@@ -74,7 +88,7 @@ class VideoRepository:
               INSERT INTO tik_tok_video
               (video_id, video_link, subtitle_text, is_transcribed_locally, language_code, metadata,
                reason_for_skip_processing)
-              VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (video_id) DO NOTHING; 
+              VALUES (%s, %s, %s, %s, %s, %s, %s) ON CONFLICT (video_id) DO NOTHING; \
               """
         rows = [
             (
@@ -306,12 +320,12 @@ class UserVocabularyRepository:
                                            correct_count, \
                                            wrong_count, \
                                            last_seen_at, \
-                                           created_at, \
                                            updated_at, \
                                            collection_name, \
                                            lemma, \
                                            translation_text, \
-                                           translation_lemma)
+                                           translation_lemma, \
+                                           created_at)
               VALUES (%(user_id)s, \
                       %(text)s, \
                       %(item_type)s, \
@@ -327,43 +341,39 @@ class UserVocabularyRepository:
                       %(wrong_count)s, \
                       now(), \
                       now(), \
-                      now(), \
                       %(collection_name)s, \
                       %(lemma)s, \
                       %(translation_text)s, \
-                      %(translation_lemma)s) ON CONFLICT (user_id, text)
-             DO
+                      %(translation_lemma)s, \
+                      %(created_at)s) ON CONFLICT (user_id, text)
+        DO \
               UPDATE SET
-                  collection_name = COALESCE (user_vocabulary.collection_name, EXCLUDED.collection_name),
-                  lemma = COALESCE (user_vocabulary.lemma, EXCLUDED.lemma),
-                  translation_text = COALESCE (user_vocabulary.translation_text, EXCLUDED.translation_text),
-                  translation_lemma = COALESCE (user_vocabulary.translation_lemma, EXCLUDED.translation_lemma),
-                  source = (
-                  SELECT ARRAY(
-                  SELECT DISTINCT s
-                  FROM unnest(user_vocabulary.source || EXCLUDED.source) s
-                  )
-                  ),
-
-                  contexts = (
-                  SELECT ARRAY(
-                  SELECT DISTINCT c
-                  FROM unnest(
-                  COALESCE (user_vocabulary.contexts, '{}'::text[])
-                  || COALESCE (EXCLUDED.contexts, '{}'::text[])
-                  ) c
-                  )
-                  ),
-
-                  passive_knowledge = user_vocabulary.passive_knowledge OR EXCLUDED.passive_knowledge,
-                  active_knowledge = user_vocabulary.active_knowledge OR EXCLUDED.active_knowledge,
-
-                  seen_count = user_vocabulary.seen_count + EXCLUDED.seen_count,
-                  correct_count = user_vocabulary.correct_count + EXCLUDED.correct_count,
-                  wrong_count = user_vocabulary.wrong_count + EXCLUDED.wrong_count,
-
-                  last_seen_at = now(),
-                  updated_at = now();
+                  collection_name = COALESCE (user_vocabulary.collection_name, EXCLUDED.collection_name), \
+                  lemma = COALESCE (user_vocabulary.lemma, EXCLUDED.lemma), \
+                  translation_text = COALESCE (user_vocabulary.translation_text, EXCLUDED.translation_text), \
+                  translation_lemma = COALESCE (user_vocabulary.translation_lemma, EXCLUDED.translation_lemma), \
+                  source = ( \
+                  SELECT ARRAY( \
+                  SELECT DISTINCT s \
+                  FROM unnest(user_vocabulary.source || EXCLUDED.source) s \
+                  ) \
+                  ), \
+                  contexts = ( \
+                  SELECT ARRAY( \
+                  SELECT DISTINCT c \
+                  FROM unnest( \
+                  COALESCE (user_vocabulary.contexts, '{}'::text[]) \
+                  || COALESCE (EXCLUDED.contexts, '{}'::text[]) \
+                  ) c \
+                  ) \
+                  ), \
+                  passive_knowledge = user_vocabulary.passive_knowledge OR EXCLUDED.passive_knowledge, \
+                  active_knowledge = user_vocabulary.active_knowledge OR EXCLUDED.active_knowledge, \
+                  seen_count = user_vocabulary.seen_count + EXCLUDED.seen_count, \
+                  correct_count = user_vocabulary.correct_count + EXCLUDED.correct_count, \
+                  wrong_count = user_vocabulary.wrong_count + EXCLUDED.wrong_count, \
+                  last_seen_at = now(), \
+                  updated_at = now(); \
               """
 
         params = []
@@ -397,6 +407,7 @@ class UserVocabularyRepository:
                 "lemma": w.lemma,
                 "translation_text": w.translation_text,
                 "translation_lemma": w.translation_lemma,
+                "created_at": w.creation_datetime,
             })
 
         with get_conn() as conn:
