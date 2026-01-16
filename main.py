@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     analyzer = LessonProcessor(whisper_model_size="large")
     res = analyzer.process_video_to_db(
-        user_id=123,
+        user_id=USER_ID,
         video_path=str(video_path),
         out_dir=str(BASE_DIR / "data" / "processed" / "lessons"),
         title="Lesson 2",
