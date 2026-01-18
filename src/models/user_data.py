@@ -1,13 +1,8 @@
 import json
-import re
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-from urllib.parse import urlparse, parse_qs
-
-# Regex validator for Yandex Translator collection id
-COLLECTION_ID_RE = re.compile(r"^[a-f0-9]{24}$")
 
 
 class UserDataTikTok:
@@ -39,41 +34,11 @@ class UserDataTikTok:
                 return user_data
 
 
-class UserDataYandexTranslator:
-    collections: list[str]
-
-    def __init__(self, collections: list[str]):
-        self.collections = []
-        for collection in collections:
-            cid = self._extract_collection_id(collection)
-            if cid:
-                self.collections.append(cid)
-            else:
-                raise ValueError(f"Collection id (or link) {collection} is not valid")
-
-    def _extract_collection_id(self, value):
-        value = value.strip()
-
-        if COLLECTION_ID_RE.fullmatch(value):
-            return value
-
-        parsed = urlparse(value)
-        query = parse_qs(parsed.query)
-        collection_ids = query.get("collection_id")
-        if collection_ids:
-            cid = collection_ids[0]
-            if COLLECTION_ID_RE.fullmatch(cid):
-                return cid
-        return None
-
-
 @dataclass
 class UserData:
     id: int
     user_name: str
-    tg_username:str
+    tg_username: str
     email: str
     created_at: datetime
     last_visit_at: Optional[datetime]
-    tiktok_data: UserDataTikTok
-    yandex_translator: UserDataYandexTranslator

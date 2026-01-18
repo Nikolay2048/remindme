@@ -1,5 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from typing import Any
 
 import pyktok as pyk
@@ -8,8 +9,8 @@ from requests import RequestException
 
 from src.db.repositories import VideoRepository
 from src.models.enums import ReasonsForSkipProcessing
-from src.models.video import Video
-from src.services.user_data_processor import UserDataService
+from src.models.user_data import UserDataTikTok
+from src.models.video import Video, UserVideo
 from src.utils import extract_text_from_vtt
 
 logger = logging.getLogger(__name__)
@@ -17,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 class TikTokProcessor:
 
-    def __init__(self, video_links_list: list[str]):
-        self.video_links_list = video_links_list
+    def __init__(self, user_data_tik_tok: UserDataTikTok):
+        self.user_data_tik_tok = user_data_tik_tok
 
     def get_caption_infos(self, video_metadata: dict) -> list | None:
         caption_infos = (
@@ -53,7 +54,7 @@ class TikTokProcessor:
             return None
 
     def process_video(self, video_link: str, existing_video) -> Video | None:
-        video_id = UserDataService.get_video_id_from_video_link(video_link)
+        video_id = self._get_video_id_from_video_link(video_link)
         if video_id in existing_video:
             return
         try:
@@ -86,18 +87,19 @@ class TikTokProcessor:
             logger.error(f"Video skipped. Failed to process video by link {video_link}: {e}", exc_info=True)
             return None
 
-    def collect_video_captions_from_user_videos(self, batch_size, workers):
+    def collect_video_captions_from_user_videos(self, batch_size, workers,
+                                                history_video_list: list[dict[str, Any]]) -> None:
         batch = []
         existing_video = VideoRepository.get_existing_video_ids()
 
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
-                executor.submit(self.process_video, video, existing_video): video for video in
-                self.video_links_list
+                executor.submit(self.process_video, video["Link"], existing_video): video for video in
+                history_video_list
             }
             for idx, future in enumerate(as_completed(futures), start=1):
                 video = futures[future]
-                logger.debug(f"[{idx}/{len(self.video_links_list)}] Completed {video}")
+                logger.debug(f"[{idx}/{len(history_video_list)}] Completed {video}")
                 try:
                     result = future.result()
                     if result:
@@ -110,3 +112,25 @@ class TikTokProcessor:
                     batch.clear()
         if batch:
             VideoRepository.insert_tik_tok_videos(batch)
+
+    def _get_video_id_from_video_link(self, video_link: str) -> int:
+        return int(video_link.split("/")[-2])
+
+    def update_user_video_history(self, user_id: int, user_data_tik_tok: UserDataTikTok):
+        logger.info(f"User history contains {len(user_data_tik_tok.history_video_list)} videos")
+        batch = []
+        user_videos = VideoRepository.get_user_video_ids(user_id)
+        for video_data in user_data_tik_tok.history_video_list:
+            video_id = self._get_video_id_from_video_link(video_data['Link'])
+            if video_id in user_videos:
+                continue
+            batch.append(UserVideo(
+                video_id=video_id,
+                viewed_at=datetime.strptime(video_data['Date'], "%Y-%m-%d %H:%M:%S"),
+                is_liked=video_data['Link'] in user_data_tik_tok.liked_links,
+            ))
+            if len(batch) >= 100:
+                VideoRepository.insert_user_videos(user_id, batch)
+                batch.clear()
+        if batch:
+            VideoRepository.insert_user_videos(user_id, batch)
