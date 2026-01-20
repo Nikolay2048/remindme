@@ -5,12 +5,13 @@ import json
 import os
 from typing import Dict, Any, Optional
 
+import torch
+
 from src.db.repositories import LessonRepository, UserVocabularyRepository
 from src.services.word_processor import WordProcessor
 from .audio_extract import AudioExtractor
 from .report import build_lesson_report
 from .transcribe import LessonTranscriber
-# IMPORTANT: use your vocab analyzer (full file) that returns upserts
 from .vocab import VocabAnalyzer, CefrLexicon
 
 
@@ -18,12 +19,9 @@ class LessonProcessor:
     def __init__(
             self,
             *,
-            # whisper_model_size="small",
-            # device="cpu",
-            # compute_type="int8",
             whisper_model_size: str = "small",
-            device: str = "cuda",
-            compute_type: str = "float16",
+            device: str =  os.getenv("DEVICE", "cuda" if torch.cuda.is_available() else "cpu"),
+            compute_type: str = os.getenv("COMPUTE_TYPE", "float16" if torch.cuda.is_available() else "int8"),
             language: str = "en",
             utterance_gap_ms: int = 1000,
             low_prob: float = 0.55,

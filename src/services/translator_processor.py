@@ -91,6 +91,7 @@ class YandexTranslatorProcessor:
         for collection in collections:
             collection_id = self._extract_collection_id(collection)
             if not collection_id:
+                logger.error(f"Collection ID not valid: {collection}")
                 raise ValueError(f"Collection id (or link) {collection} is not valid")
             logger.info(f"Collecting words from collection={collection_id}")
             payload = self._fetch_collection(collection_id)

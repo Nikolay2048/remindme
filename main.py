@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 from pathlib import Path
@@ -9,6 +10,7 @@ from src.models.user_data import UserData, UserDataTikTok
 from src.services.lesson_analyzer.processor import LessonProcessor
 from src.services.tik_tok_processor import TikTokProcessor
 from src.services.translator_processor import YandexTranslatorProcessor
+from src.ui.bot.bot import run_telegram_bot
 
 load_dotenv()
 
@@ -32,10 +34,15 @@ USER_ID = 123
 USER_NAME = "user"
 TG_USERNAME = "tg_id"
 
+DEVICE = os.getenv("DEVICE")
+COMPUTE_TYPE = os.getenv("COMPUTE_TYPE")
+
 BASE_DIR = Path(__file__).resolve().parent
 video_path = BASE_DIR / "data" / "lessons" / "Arina_lesson_2.mp4"
 
 if __name__ == '__main__':
+    # asyncio.run(run_telegram_bot())
+
     user_data = UserData(
         id=USER_ID,
         tg_username=TG_USERNAME,
@@ -63,7 +70,7 @@ if __name__ == '__main__':
     translator_processor = YandexTranslatorProcessor()
     translator_processor.process_user_collections(user_data.id, json.loads(USER_YANDEX_TRANSLATOR_COLLECTIONS))
 
-    analyzer = LessonProcessor(whisper_model_size="large")
+    analyzer = LessonProcessor(whisper_model_size="large", device=DEVICE, compute_type=COMPUTE_TYPE)
     res = analyzer.process_video_to_db(
         user_id=user_data.id,
         video_path=str(video_path),
@@ -72,5 +79,6 @@ if __name__ == '__main__':
         source="file",
         materials_text=None,
     )
+
     print("OK lesson:", res["lesson_db_id"])
     print("Report:", res["paths"]["report_json"])

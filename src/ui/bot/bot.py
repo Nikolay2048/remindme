@@ -35,7 +35,7 @@ from .handlers import (
 from .keyboards import KB
 
 
-async def main():
+async def run_telegram_bot():
     bot = Bot(token=os.getenv("BOT_TOKEN"))
     dp = Dispatcher(storage=MemoryStorage())
 
@@ -81,5 +81,3 @@ async def main():
     await dp.start_polling(bot)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -71,13 +71,6 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
 
   # One-time init: pulls the model on first start (uses the same ollama_data volume)
   ollama_init:
@@ -100,7 +93,7 @@ services:
     build:
       context: .
       args:
-        TORCH_REQUIREMENTS: requirements.gpu.txt
+        TORCH_REQUIREMENTS: requirements.cpu.txt
     container_name: remindme_app
 
     depends_on:
@@ -122,23 +115,19 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434}
       LLM_MODEL: ${LLM_MODEL:-qwen2.5:14b-instruct}
 
+      DEVICE: ${DEVICE:-cpu}
+      COMPUTE_TYPE: ${COMPUTE_TYPE:-int8}
+
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
     working_dir: /app
 
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
 
 
 volumes:
   postgres_data:
-#  whisperx-cache:
-#    driver: local
+  whisperx-cache:
+    driver: local
   ollama_data:
     driver: local
