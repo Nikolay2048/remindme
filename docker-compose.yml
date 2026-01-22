@@ -71,13 +71,8 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+    runtime: nvidia
+
 
   # One-time init: pulls the model on first start (uses the same ollama_data volume)
   ollama_init:
@@ -109,7 +104,7 @@ services:
     env_file: .env
 
     environment:
-      DB_HOST: ${DB_HOST}
+      DB_HOST: db
       DB_PORT: ${DB_PORT}
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
@@ -127,13 +122,7 @@ services:
       - ./logs:/app/logs
     working_dir: /app
 
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
+    runtime: nvidia
 
 
 volumes:

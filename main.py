@@ -38,7 +38,7 @@ DEVICE = os.getenv("DEVICE")
 COMPUTE_TYPE = os.getenv("COMPUTE_TYPE")
 
 BASE_DIR = Path(__file__).resolve().parent
-video_path = BASE_DIR / "data" / "lessons" / "Arina_lesson_2.mp4"
+video_path = BASE_DIR / "data" / "lessons" / "2026-01-16 18-31-17.mp4"
 
 if __name__ == '__main__':
     # asyncio.run(run_telegram_bot())
@@ -57,12 +57,13 @@ if __name__ == '__main__':
 
     UserRepository.add_user(user_data)
 
-    user_data_tik_tok = UserDataTikTok(USER_DATA_TIK_TOK_PATH_ARCH)
+    # ======= Tik-Tok Processing =======
+    # user_data_tik_tok = UserDataTikTok(USER_DATA_TIK_TOK_PATH_ARCH)
 
-    tik_tok_processor = TikTokProcessor(user_data_tik_tok=user_data_tik_tok)
-    tik_tok_processor.collect_video_captions_from_user_videos(VIDEO_BATCH_SIZE, VIDEO_WORKER_COUNT,
-                                                              user_data_tik_tok.history_video_list)
-    tik_tok_processor.update_user_video_history(user_data.id, user_data_tik_tok)
+    # tik_tok_processor = TikTokProcessor(user_data_tik_tok=user_data_tik_tok)
+    # tik_tok_processor.collect_video_captions_from_user_videos(VIDEO_BATCH_SIZE, VIDEO_WORKER_COUNT,
+    #                                                           user_data_tik_tok.history_video_list)
+    # tik_tok_processor.update_user_video_history(user_data.id, user_data_tik_tok)
 
     logger.info(f"Collected all captions from tik-tok for user")
     # process_video_without_captions()
