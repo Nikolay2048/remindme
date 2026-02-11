@@ -66,17 +66,16 @@ async def run_telegram_bot():
     dp.callback_query.register(lambda c: cb_vocab_category(c, item_type="RUSSIAN_WORD"), F.data == KB.VOCAB_RU)
 
     # media uploads
-    dp.message.register(
-        lambda m, s: handle_text_materials(m, s, os.getenv("LESSON_OUT_DIR")),
-        Flow.waiting_text,
-        F.text,
-    )
+    lesson_out_dir = os.getenv("LESSON_OUT_DIR")
 
-    dp.message.register(
-        lambda m, s, b: handle_media(m, s, b, os.getenv("LESSON_OUT_DIR")),
-        Flow.waiting_video_or_audio,
-        (F.video | F.audio | F.document),
-    )
+    async def _handle_text_materials(message, state):
+        await handle_text_materials(message, state, lesson_out_dir)
+
+    async def _handle_media(message, state, bot):
+        await handle_media(message, state, bot, lesson_out_dir)
+
+    dp.message.register(_handle_text_materials, Flow.waiting_text, F.text)
+    dp.message.register(_handle_media, Flow.waiting_video_or_audio, (F.video | F.audio | F.document))
 
     await dp.start_polling(bot)
 

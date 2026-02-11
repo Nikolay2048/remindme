@@ -40,5 +40,5 @@ class UserData:
     user_name: str
     tg_username: str
     email: str
-    created_at: datetime
-    last_visit_at: Optional[datetime]
+    created_at: datetime = datetime.now()
+    last_visit_at: datetime = datetime.now()

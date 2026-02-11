@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -175,10 +176,10 @@ async def cmd_start(message: Message, state: FSMContext):
     username = message.from_user.full_name or "user"
     tg_username = message.from_user.username
 
-    # твоя модель UserData: подстрой под реальные поля
     try:
-        UserRepository.add_user(UserData(id=uid, user_name=username, email=None))
-    except Exception:
+        UserRepository.add_user(UserData(id=uid, user_name=username, tg_username=tg_username, email=None))
+    except Exception as e:
+
         # если уже есть — ок, не валим бота
         pass
 
@@ -286,48 +287,57 @@ async def handle_text_materials(message: Message, state: FSMContext, config_out_
 async def handle_media(message: Message, state: FSMContext, bot: Bot, config_out_dir: str):
     user_id = message.from_user.id
 
+    await state.clear()
+    await message.answer(Msg.UPLOAD_RECEIVED, parse_mode="Markdown")
+
+    # сохраняем файл
+    work_dir = ensure_dir(f"{config_out_dir}/tg_uploads/{user_id}")
     try:
-        await state.clear()
-        await message.answer(Msg.UPLOAD_RECEIVED, parse_mode="Markdown")
-
-        # сохраняем файл
-        work_dir = ensure_dir(f"{config_out_dir}/tg_uploads/{user_id}")
         local_path = await download_telegram_file(bot, message, out_dir=work_dir)
-
-        # стартуем тяжёлую обработку в отдельном потоке
-        async def run_pipeline():
-            processor = LessonProcessor(
-                whisper_model_size="small",
-                device="cuda",
-                compute_type="float16",
-                language="en",
-            )
-            return processor.process_video_to_db(
-                user_id=user_id,
-                video_path=local_path,
-                out_dir=config_out_dir,
-                title="Lesson",
-                source="file",
-                materials_text=None,
-            )
-
-        res = await asyncio.to_thread(lambda: asyncio.run(run_pipeline()))  # безопасно для синхронной тяжёлой части
-
-        # загрузим report_json из файла (чтобы не зависеть от структуры res)
-        report_path = res["paths"]["report_json"]
-        with open(report_path, "r", encoding="utf-8") as f:
-            report = json.load(f)
-
-        cache = _get_cache(user_id)
-        cache.lesson_db_id = res.get("lesson_db_id")
-        cache.report = report
-
-        await message.answer(_format_lesson_summary(report), reply_markup=lesson_ready_menu(), parse_mode="Markdown")
-
     except ValueError:
         await message.answer(Msg.ERROR_FILE)
-    except Exception:
-        await message.answer(Msg.ERROR_GENERIC)
+        return
+    except TelegramBadRequest as exc:
+        if "file is too big" in str(exc).lower():
+            await message.answer(Msg.ERROR_FILE)
+        else:
+            await message.answer(Msg.ERROR_GENERIC)
+        return
+
+    # стартуем тяжёлую обработку в отдельном потоке
+    async def run_pipeline():
+        processor = LessonProcessor(
+            whisper_model_size="small",
+            device="cuda",
+            compute_type="float16",
+            language="en",
+        )
+        return processor.process_video_to_db(
+            user_id=user_id,
+            video_path=local_path,
+            out_dir=config_out_dir,
+            title="Lesson",
+            source="file",
+            materials_text=None,
+        )
+
+    res = await asyncio.to_thread(lambda: asyncio.run(run_pipeline()))  # безопасно для синхронной тяжёлой части
+
+    # загрузим report_json из файла (чтобы не зависеть от структуры res)
+    report_path = res["paths"]["report_json"]
+    with open(report_path, "r", encoding="utf-8") as f:
+        report = json.load(f)
+
+    cache = _get_cache(user_id)
+    cache.lesson_db_id = res.get("lesson_db_id")
+    cache.report = report
+
+    await message.answer(_format_lesson_summary(report), reply_markup=lesson_ready_menu(), parse_mode="Markdown")
+
+    # except ValueError:
+    #     await message.answer(Msg.ERROR_FILE)
+    # except Exception:
+    #     await message.answer(Msg.ERROR_GENERIC)
 
 
 async def cb_report(callback: CallbackQuery):

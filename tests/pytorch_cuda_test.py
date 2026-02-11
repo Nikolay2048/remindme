@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import time
-
+from torchvision.models import resnet50
 if not torch.cuda.is_available():
     raise RuntimeError("CUDA не доступна!")
 
@@ -19,7 +19,7 @@ steps = 500             # ← увеличь для большей нагруз�
 use_amp = True          # mixed precision — увеличивает нагрузку на Tensor Cores
 
 # === Более тяжёлая модель ===
-model = torch.hub.load('pytorch/vision', 'resnet50', pretrained=False, num_classes=num_classes)
+model = resnet50(weights=None, num_classes=num_classes).cuda()
 model = model.to(device)
 
 # === Синтетические данные (остаются на GPU) ===

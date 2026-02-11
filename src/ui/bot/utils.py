@@ -9,6 +9,7 @@ from aiogram import Bot
 from aiogram.types import Message
 
 SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
+MAX_TG_FILE_SIZE = 20 * 1024 * 1024  # Telegram Bot API getFile download limit
 
 
 def ensure_dir(path: str) -> str:
@@ -46,12 +47,14 @@ async def download_telegram_file(bot: Bot, message: Message, out_dir: str) -> st
 
     if file is None:
         raise ValueError("No supported media in message")
+    if file.file_size and file.file_size > MAX_TG_FILE_SIZE:
+        raise ValueError("FILE_TOO_LARGE")
 
     base = sanitize_filename(original_name)
     ts = int(time.time())
     local_path = os.path.join(out_dir, f"{ts}_{base}")
 
     tg_file = await bot.get_file(file.file_id)
-    await bot.download_file(tg_file.file_path, destination=local_path)
+    await bot.download_file(tg_file.file_path, destination=local_path, timeout=600)
 
     return local_path

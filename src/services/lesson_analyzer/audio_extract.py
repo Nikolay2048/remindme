@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 from dataclasses import dataclass
 from typing import List
@@ -27,6 +28,7 @@ class AudioExtractor:
         ])
 
     def extract_three_tracks(self, *, video_path: str, out_dir: str) -> ExtractedTracks:
+        # TODO: В телеге передается только один трек
         student = f"{out_dir}/student.wav"
         teacher = f"{out_dir}/teacher.wav"
         mixed = f"{out_dir}/mixed.wav"
