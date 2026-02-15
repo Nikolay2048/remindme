@@ -11,6 +11,7 @@ from src.services.lesson_analyzer.processor import LessonProcessor
 from src.services.tik_tok_processor import TikTokProcessor
 from src.services.translator_processor import YandexTranslatorProcessor
 from src.ui.bot.bot import run_telegram_bot
+from src.ui.tg_bot import run_bot
 
 load_dotenv()
 
@@ -41,7 +42,7 @@ BASE_DIR = Path(__file__).resolve().parent
 video_path = BASE_DIR / "data" / "lessons" / "2026-01-16 18-31-17.mp4"
 
 if __name__ == '__main__':
-    # asyncio.run(run_telegram_bot())
+    asyncio.run(run_bot())
 
     user_data = UserData(
         id=USER_ID,

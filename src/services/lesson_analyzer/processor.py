@@ -50,7 +50,7 @@ class LessonProcessor:
             phrase_min_count=10 ** 9,  # phrases off in MVP
         )
 
-    def process_video_to_db(
+    async def process_video_to_db(
             self,
             *,
             user_id: int,
