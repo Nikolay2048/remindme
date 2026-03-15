@@ -20,7 +20,7 @@ class LessonProcessor:
             self,
             *,
             whisper_model_size: str = "small",
-            device: str =  os.getenv("DEVICE", "cuda" if torch.cuda.is_available() else "cpu"),
+            device: str = os.getenv("DEVICE", "cuda" if torch.cuda.is_available() else "cpu"),
             compute_type: str = os.getenv("COMPUTE_TYPE", "float16" if torch.cuda.is_available() else "int8"),
             language: str = "en",
             utterance_gap_ms: int = 1000,
@@ -50,12 +50,14 @@ class LessonProcessor:
             phrase_min_count=10 ** 9,  # phrases off in MVP
         )
 
-    async def process_video_to_db(
+    async def process_lesson_to_db(
             self,
             *,
             user_id: int,
-            video_path: str,
-            out_dir: str = "_lesson",
+            student_audio_path: str,
+            teacher_audio_path: str,
+            lesson_dir: str,
+            lesson_id: str,
             title: Optional[str] = None,
             source: str = "file",
             materials_text: Optional[str] = None,
@@ -68,25 +70,20 @@ class LessonProcessor:
             user_id=user_id,
             title=title,
             source=source,
-            source_uri=video_path,
+            source_uri=student_audio_path,
             language_mode="ru+en",
             duration_sec=None,
             started_at=None,
             metadata={"pipeline": "lesson_analyzer_v1"},
         )
 
-        # local ids for filesystem/report
-        lesson_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        lesson_dir = os.path.join(out_dir, f"lesson_{lesson_datetime}")
-        os.makedirs(lesson_dir, exist_ok=True)
-
         # 2) extract tracks
-        tracks = self.audio.extract_three_tracks(video_path=video_path, out_dir=lesson_dir)
-
+        # tracks = self.audio.extract_three_tracks(video_path=video_path, out_dir=lesson_dir)
+        #
         # 3) transcribe
         tr = self.transcriber.transcribe_two_roles(
-            teacher_audio_path=tracks.teacher_wav,
-            student_audio_path=tracks.student_wav,
+            teacher_audio_path=teacher_audio_path,
+            student_audio_path=student_audio_path,
         )
 
         # 4) talk metrics
@@ -118,7 +115,8 @@ class LessonProcessor:
             lesson_id=str(lesson_db_id),
             user_id=user_id,
             source={
-                "video_path": video_path,
+                "teacher_audio_path": teacher_audio_path,
+                "student_audio_path": student_audio_path,
                 "language": "en",
                 "materials_provided": bool(materials_text),
             },
@@ -128,7 +126,7 @@ class LessonProcessor:
             action_items=vocab_res["action_items"],
         )
 
-        report_path = os.path.join(lesson_dir, "lesson_report.json")
+        report_path = os.path.join(lesson_dir, f"{lesson_id}_report.json")
         with open(report_path, "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2)
 
@@ -150,9 +148,8 @@ class LessonProcessor:
             "paths": {
                 "lesson_dir": lesson_dir,
                 "report_json": report_path,
-                "student_wav": tracks.student_wav,
-                "teacher_wav": tracks.teacher_wav,
-                "mixed_wav": tracks.mixed_wav,
+                "teacher_audio_path": teacher_audio_path,
+                "student_audio_path": student_audio_path,
             },
             "aggregates": vocab_res["aggregates"],
         }

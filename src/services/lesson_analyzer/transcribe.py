@@ -186,8 +186,9 @@ class LessonTranscriber:
         )
 
         if _info.language not in ("ru", "en"):
-            print("===== INNFFOO =====")
+            print("===== Not supported language =====")
             print(_info)
+            return []
         out: List[_SegPack] = []
         for seg in segments:
             start = float(getattr(seg, "start", 0.0) or 0.0)
