@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -18,6 +18,9 @@ class KB:
     # upload data
     UPLOAD_LESSON = "upload_lesson"
     UPLOAD_YANDEX_TRANSLATOR_LINK = "upload_yandex_translator"
+
+    # chat
+    EXIT_CHAT = "⬅️ Выйти из чата"
 
 
 def main_menu() -> InlineKeyboardMarkup:
@@ -37,6 +40,7 @@ def back() -> InlineKeyboardMarkup:
     b.adjust(1)
     return b.as_markup()
 
+
 def upload_data() -> InlineKeyboardMarkup:
     b = InlineKeyboardBuilder()
     b.button(text="Загрузить урок", callback_data=KB.UPLOAD_LESSON)
@@ -45,13 +49,12 @@ def upload_data() -> InlineKeyboardMarkup:
     b.adjust(1)
     return b.as_markup()
 
-
-# def levels_menu() -> InlineKeyboardMarkup:
-#     b = InlineKeyboardBuilder()
-#     b.button(text="A1", callback_data=KB.LEVEL_A1)
-#     b.button(text="A2", callback_data=KB.LEVEL_A2)
-#     b.button(text="B1", callback_data=KB.LEVEL_B1)
-#     b.button(text="B2", callback_data=KB.LEVEL_B2)
-#     b.button(text="Отмена", callback_data=KB.CANCEL)
-#     b.adjust(2, 2, 1)
-#     return b.as_markup()
+def chat_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text=KB.EXIT_CHAT)]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+        selective=False
+    )
