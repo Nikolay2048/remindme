@@ -44,20 +44,28 @@ class Txt:
     EMPTY = "Пока здесь пусто. Загрузи урок — и я всё проанализирую."
 
     WORD_REPORT = (
-        "> {word} (использовал {count} раз) {difficulty_level_cefr}\n"
-        "  В контексте: {context}\n"
+        "• <i>{word}</i> ({count} раз) {difficulty_level_cefr}\n"
+        "<blockquote>{context}</blockquote>\n"
     )
 
-    LESSON_REPORT = (
-        "Отличная работа. Вот результат занятия:\n"
-        "{datetime}\n\n"
-        "Ты говорил {student_speaking_time_min} мин (учитель {teacher_speaking_time_min} мин)\n"
-        "В своей речи ты использовал {student_words_count} слов (учитель {teacher_words_count} слв)\n\n"
-        "<b>1. Твои новые слова (поздравляю, ты их произнес впервые):</b>\n"
-        "{new_items_used}\n\n"
-        "<b>2. Слова, которые ты использовал уверенно:</b>\n"
-        "{activated_items}\n\n"
-        "<b>3. Использовал родной язык:</b>\n"
-        "{russian_used}\n\n"
-        "Можем закрепить в заданиях\n"
-    )
+    LESSON_REPORT = [
+        (
+            "Отличная работа. Вот результат занятия:\n"
+            "{datetime}\n\n"
+            "Ты говорил {student_speaking_time_min:.2f} мин (учитель {teacher_speaking_time_min:.2f} мин)\n"
+            "В своей речи ты использовал {student_words_count} слов (учитель {teacher_words_count} слв)\n\n"
+        ),
+        (
+            "<b>1. Твои новые слова (поздравляю, ты их произнес впервые):</b>\n"
+            "{new_items_used}\n\n"
+        ),
+        (
+            "<b>2. Слова, которые ты использовал уверенно:</b>\n"
+            "{activated_items}\n\n"
+        ),
+        (
+            "<b>3. Использовал родной язык:</b>\n"
+            "{russian_used}\n\n"
+            "Можем закрепить в заданиях\n"
+        )
+    ]
