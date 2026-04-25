@@ -9,6 +9,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from .config import load_config
 from .handlers import router
 
+logger = logging.getLogger(__name__)
+logger.info("Telegram bot starting")
 
 async def run_bot() -> None:
     config = load_config()

@@ -34,6 +34,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
 
 
 @router.message(Command("menu"))
+@router.message(F.text == KB.MENU)
 async def cb_menu(message: Message, state: FSMContext) -> None:
     await state.clear()
     await message.answer(
@@ -41,6 +42,14 @@ async def cb_menu(message: Message, state: FSMContext) -> None:
         reply_markup=main_menu()
     )
 
+@router.callback_query(F.data == KB.MENU)
+async def cb_menu_callback(callback: CallbackQuery, state: FSMContext) -> None:
+    await state.clear()
+    await callback.message.edit_text(
+        Txt.MENU,
+        reply_markup=main_menu()
+    )
+    await callback.answer()
 
 @router.callback_query(F.data == KB.ABOUT)
 async def cb_about(callback: CallbackQuery) -> None:

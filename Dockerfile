@@ -22,6 +22,5 @@ RUN pip install https://github.com/explosion/spacy-models/releases/download/en_c
 
 COPY src/ ./src/
 COPY main.py ./main.py
-COPY config/ ./config/
 
 CMD ["python", "main.py"]

@@ -6,11 +6,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from src.db.repositories import UserRepository
-from src.models.user_data import UserData, UserDataTikTok
+from src.models.user_data import UserData
 from src.services.lesson_analyzer.processor import LessonProcessor
-from src.services.tik_tok_processor import TikTokProcessor
 from src.services.translator_processor import YandexTranslatorProcessor
-from src.ui.bot.bot import run_telegram_bot
 from src.ui.tg_bot import run_bot
 
 load_dotenv()
@@ -18,7 +16,7 @@ load_dotenv()
 import logging.config
 import os
 
-from config.logging_config import LOGGING_CONFIG
+from src.utils.logging_config import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
@@ -42,21 +40,22 @@ BASE_DIR = Path(__file__).resolve().parent
 video_path = BASE_DIR / "data" / "lessons" / "2026-01-16 18-31-17.mp4"
 
 if __name__ == '__main__':
+    logger.info(f"Start application")
     asyncio.run(run_bot())
 
-    user_data = UserData(
-        id=USER_ID,
-        tg_username=TG_USERNAME,
-        user_name=USER_NAME,
-        email="@emal",
-        created_at=datetime.datetime.now(),
-        last_visit_at=datetime.datetime.now()
-    )
-
-    logger.info(f"Processing for user id={user_data.id}, email={user_data.email}, "
-                f"name={user_data.user_name}")
-
-    UserRepository.add_user(user_data)
+    # user_data = UserData(
+    #     id=USER_ID,
+    #     tg_username=TG_USERNAME,
+    #     user_name=USER_NAME,
+    #     email="@emal",
+    #     created_at=datetime.datetime.now(),
+    #     last_visit_at=datetime.datetime.now()
+    # )
+    #
+    # logger.info(f"Processing for user id={user_data.id}, email={user_data.email}, "
+    #             f"name={user_data.user_name}")
+    #
+    # UserRepository.add_user(user_data)
 
     # ======= Tik-Tok Processing =======
     # user_data_tik_tok = UserDataTikTok(USER_DATA_TIK_TOK_PATH_ARCH)
@@ -66,21 +65,21 @@ if __name__ == '__main__':
     #                                                           user_data_tik_tok.history_video_list)
     # tik_tok_processor.update_user_video_history(user_data.id, user_data_tik_tok)
 
-    logger.info(f"Collected all captions from tik-tok for user")
+    # logger.info(f"Collected all captions from tik-tok for user")
     # process_video_without_captions()
 
-    translator_processor = YandexTranslatorProcessor()
-    translator_processor.process_user_collections(user_data.id, json.loads(USER_YANDEX_TRANSLATOR_COLLECTIONS))
-
-    analyzer = LessonProcessor(whisper_model_size="large", device=DEVICE, compute_type=COMPUTE_TYPE)
-    res = analyzer.process_video_to_db(
-        user_id=user_data.id,
-        video_path=str(video_path),
-        out_dir=str(BASE_DIR / "data" / "processed" / "lessons"),
-        title="Lesson 2",
-        source="file",
-        materials_text=None,
-    )
-
-    print("OK lesson:", res["lesson_db_id"])
-    print("Report:", res["paths"]["report_json"])
+    # translator_processor = YandexTranslatorProcessor()
+    # translator_processor.process_user_collections(user_data.id, json.loads(USER_YANDEX_TRANSLATOR_COLLECTIONS))
+    #
+    # analyzer = LessonProcessor(whisper_model_size="large", device=DEVICE, compute_type=COMPUTE_TYPE)
+    # res = analyzer.process_video_to_db(
+    #     user_id=user_data.id,
+    #     video_path=str(video_path),
+    #     out_dir=str(BASE_DIR / "data" / "processed" / "lessons"),
+    #     title="Lesson 2",
+    #     source="file",
+    #     materials_text=None,
+    # )
+    #
+    # print("OK lesson:", res["lesson_db_id"])
+    # print("Report:", res["paths"]["report_json"])

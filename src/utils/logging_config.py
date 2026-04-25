@@ -1,6 +1,6 @@
 import os
 
-LOG_DIR = os.path.join(os.path.dirname(__file__), "..", "logs")
+LOG_DIR = os.path.join(os.path.dirname(__file__), "../..", "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
 LOGGING_CONFIG = {
@@ -35,9 +35,9 @@ LOGGING_CONFIG = {
             "formatter": "default",
             "level": "ERROR"
         },
-        "file_providers": {
+        "services": {
             "class": "logging.FileHandler",
-            "filename": os.path.join(LOG_DIR, "data_providers.log"),
+            "filename": os.path.join(LOG_DIR, "services.log"),
             "formatter": "default",
             "level": "DEBUG"
         },
@@ -45,6 +45,12 @@ LOGGING_CONFIG = {
         "file_features_processing": {
             "class": "logging.FileHandler",
             "filename": os.path.join(LOG_DIR, "features_processing.log"),
+            "formatter": "default",
+            "level": "DEBUG"
+        },
+        "file_tg_bot": {
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOG_DIR, "tg_bot.log"),
             "formatter": "default",
             "level": "DEBUG"
         },
@@ -73,7 +79,7 @@ LOGGING_CONFIG = {
         #     "propagate": False
         # },
         "src.services": {
-            "handlers": ["console", "file_providers"],
+            "handlers": ["console", "services"],
             "level": "DEBUG",
             "propagate": False
         },
@@ -87,7 +93,16 @@ LOGGING_CONFIG = {
             "level": "DEBUG",
             "propagate": False
         },
-
+        "aiogram": {
+            "handlers": ["console", "file_network"],
+            "level": "INFO",
+            "propagate": False
+        },
+        "src.ui.tg_bot": {
+            "handlers": ["console", "file_tg_bot"],
+            "level": "DEBUG",
+            "propagate": False
+        },
         # root logger по умолчанию
         "": {
             "handlers": ["console", "out_of_handler"],
